@@ -55,6 +55,7 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, config *v1.Configuration
 	recorder := controller.GetEventRecorder(ctx)
 
 	// First, fetch the revision that should exist for the current generation.
+	logger.Infof("yingdebug:A new reconcile ..")
 	lcr, err := c.latestCreatedRevision(ctx, config)
 	if errors.IsNotFound(err) {
 		lcr, err = c.createRevision(ctx, config)
@@ -204,7 +205,9 @@ func (c *Reconciler) getSortedCreatedRevisions(ctx context.Context, config *v1.C
 func CheckNameAvailability(ctx context.Context, config *v1.Configuration, lister listers.RevisionLister) (*v1.Revision, error) {
 	// If config.Spec.GetTemplate().Name is set, then we can directly look up
 	// the revision by name.
+	logger := logging.FromContext(ctx)
 	name := config.Spec.GetTemplate().Name
+	logger.Infof("yingdebug:check name for %s", name)
 	if name == "" {
 		return nil, nil
 	}
@@ -214,14 +217,20 @@ func CheckNameAvailability(ctx context.Context, config *v1.Configuration, lister
 	if errors.IsNotFound(err) {
 		// Does not exist, we must be good!
 		// note: for the name to change the generation must change.
+		logger.Infof("yingdebug:no revision found in lister yet")
 		return nil, err
 	} else if err != nil {
+		logger.Infof("yingdebug:got error %#v", err)
 		return nil, err
 	} else if !metav1.IsControlledBy(rev, config) {
 		// If the revision isn't controller by this configuration, then
 		// do not use it.
+		logger.Infof("yingdebug:got errorConflict")
 		return nil, errConflict
 	}
+
+	logger.Infof("yingdebug: config.Spec.GetTemplate().Spec %#v", config.Spec.GetTemplate().Spec)
+	logger.Infof("yingdebug: rev.Spec %#v", rev.Spec)
 
 	// Check the generation on this revision.
 	generationKey := serving.ConfigurationGenerationLabelKey
@@ -231,9 +240,6 @@ func CheckNameAvailability(ctx context.Context, config *v1.Configuration, lister
 	}
 	// We only require spec equality because the rest is immutable and the user may have
 	// annotated or labeled the Revision (beyond what the Configuration might have).
-	logger := logging.FromContext(ctx)
-	logger.Infof("yingdebug: config.Spec.GetTemplate().Spec %#v", config.Spec.GetTemplate().Spec)
-	logger.Infof("yingdebug: rev.Spec %#v", rev.Spec)
 
 	if !equality.Semantic.DeepEqual(config.Spec.GetTemplate().Spec, rev.Spec) {
 		return nil, errConflict
