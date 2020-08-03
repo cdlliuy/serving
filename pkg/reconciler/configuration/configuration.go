@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -224,9 +225,11 @@ func CheckNameAvailability(ctx context.Context, config *v1.Configuration, lister
 	} else if !metav1.IsControlledBy(rev, config) {
 		// If the revision isn't controller by this configuration, then
 		// do not use it.
-		logger.Warnf("The revision is not controlled by this configuration. Rev.meta: %#v", rev.GetOwnerReferences())
+		logger.Debugf("The revision is not controlled by this configuration. rev.meta: %#v", rev.GetObjectMeta())
 		return nil, errConflict
 	}
+	logger.Infof("yingdebug: The revision is not controlled by this configuration. rev.meta: %#v", rev.GetObjectMeta())
+	logger.Infof("yingdebug: The rev.Spec is differnet from expected config.Spec.GetTemplate().Spec. Differences are: ", cmp.Diff(config.Spec.GetTemplate().Spec, rev.Spec))
 
 	// Check the generation on this revision.
 	generationKey := serving.ConfigurationGenerationLabelKey
@@ -237,7 +240,7 @@ func CheckNameAvailability(ctx context.Context, config *v1.Configuration, lister
 	// We only require spec equality because the rest is immutable and the user may have
 	// annotated or labeled the Revision (beyond what the Configuration might have).
 	if !equality.Semantic.DeepEqual(config.Spec.GetTemplate().Spec, rev.Spec) {
-		logger.Warnf("The rev.Spec %#v is differnet from expected config.Spec.GetTemplate().Spec: %#v", rev.Spec, config.Spec.GetTemplate().Spec)
+		logger.Debugf("The rev.Spec is differnet from expected config.Spec.GetTemplate().Spec. Differences are: ", cmp.Diff(config.Spec.GetTemplate().Spec, rev.Spec))
 		return nil, errConflict
 	}
 	return rev, nil
