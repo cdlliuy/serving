@@ -228,7 +228,7 @@ func CheckNameAvailability(ctx context.Context, config *v1.Configuration, lister
 		logger.Debugf("The revision %s is not controlled by configuration. Rev.owner: %#v", rev.GetName(), config.GetName(), rev.GetOwnerReferences())
 		return nil, errConflict
 	}
-	logger.Debugf("yingdebug: The revision %s is not controlled by configuration. Rev.owner: %#v", rev.GetName(), config.GetName(), rev.GetOwnerReferences())
+	logger.Infof("yingdebug: The revision %s is not controlled by configuration. Rev.owner: %#v", rev.GetName(), config.GetName(), rev.GetOwnerReferences())
 	logger.Infof("yingdebug: The rev.Spec is differnet from expected config.Spec.GetTemplate().Spec. Differences are: ", cmp.Diff(config.Spec.GetTemplate().Spec, rev.Spec))
 
 	// Check the generation on this revision.
