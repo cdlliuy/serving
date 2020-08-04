@@ -266,6 +266,7 @@ func (a *autoscaler) Scale(ctx context.Context, now time.Time) ScaleResult {
 		excessBCF = math.Floor(totCap - a.deciderSpec.TargetBurstCapacity - observedPanicValue)
 		numAct = int32(math.Max(MinActivators,
 			math.Ceil((totCap+a.deciderSpec.TargetBurstCapacity)/a.deciderSpec.ActivatorCapacity)))
+		logger.Infof("when tbc=%d, originalReadyPodsCount=%d, totalValue=%d, observedPanicValue=%d  ", a.deciderSpec.TargetBurstCapacity, float64(originalReadyPodsCount), a.deciderSpec.TotalValue, observedPanicValue)
 	case a.deciderSpec.TargetBurstCapacity == -1:
 		numAct = int32(math.Max(MinActivators,
 			math.Ceil(float64(originalReadyPodsCount)*a.deciderSpec.TotalValue/a.deciderSpec.ActivatorCapacity)))

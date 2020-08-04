@@ -72,6 +72,7 @@ var _ pareconciler.Interface = (*Reconciler)(nil)
 func (c *Reconciler) ReconcileKind(ctx context.Context, pa *pav1alpha1.PodAutoscaler) pkgreconciler.Event {
 	logger := logging.FromContext(ctx)
 
+	logger.Debugf("yingdebug: enter a new reconcile of kpa")
 	// We need the SKS object in order to optimize scale to zero
 	// performance. It is OK if SKS is nil at this point.
 	sksName := anames.SKS(pa.Name)
@@ -82,6 +83,7 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, pa *pav1alpha1.PodAutosc
 
 	// Having an SKS and its PrivateServiceName is a prerequisite for all upcoming steps.
 	if sks == nil || sks.Status.PrivateServiceName == "" {
+		logger.Debugf("yingdebug: we should not reach here when no ksvc created")
 		// Before we can reconcile decider and get real number of activators
 		// we start with default of 2.
 		if _, err = c.ReconcileSKS(ctx, pa, nv1alpha1.SKSOperationModeServe, 0 /*numActivators == all*/); err != nil {
@@ -163,6 +165,7 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, pa *pav1alpha1.PodAutosc
 }
 
 func (c *Reconciler) reconcileDecider(ctx context.Context, pa *pav1alpha1.PodAutoscaler) (*scaling.Decider, error) {
+	logger := logging.FromContext(ctx)
 	desiredDecider := resources.MakeDecider(ctx, pa, config.FromContext(ctx).Autoscaler)
 	decider, err := c.deciders.Get(ctx, desiredDecider.Namespace, desiredDecider.Name)
 	if errors.IsNotFound(err) {
@@ -176,7 +179,9 @@ func (c *Reconciler) reconcileDecider(ctx context.Context, pa *pav1alpha1.PodAut
 
 	// Ignore status when reconciling
 	desiredDecider.Status = decider.Status
+	logger.Debugf("yingdebug: decider.status %#v", decider.Status)
 	if !equality.Semantic.DeepEqual(desiredDecider, decider) {
+		logger.Debugf("yingdebug: should not be here for decider")
 		decider, err = c.deciders.Update(ctx, desiredDecider)
 		if err != nil {
 			return nil, fmt.Errorf("error updating decider: %w", err)
