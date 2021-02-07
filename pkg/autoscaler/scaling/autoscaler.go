@@ -54,6 +54,7 @@ type autoscaler struct {
 
 	// State in panic mode.
 	panicTime    time.Time
+	cooldownTime time.Time
 	maxPanicPods int32
 
 	// delayWindow is used to defer scale-down decisions until a time
@@ -123,6 +124,7 @@ func newAutoscaler(
 		delayWindow: delayWindow,
 
 		panicTime:    pt,
+		coolDownTime: 
 		maxPanicPods: int32(curC),
 	}
 }
@@ -259,6 +261,17 @@ func (a *autoscaler) Scale(logger *zap.SugaredLogger, now time.Time) ScaleResult
 		}
 	}
 
+	if desiredPodCount  < readyPodsCount {
+	//this is a scale-up 
+	 if !a.cooldownTime.IsZero() {
+		 //shorter than cooldown
+			a.cooldownTime.Add(spec.StableWindow).After(now) {
+				desiredPodCount = readyPodsCount
+			}
+	 } else {
+			a.cooldownTime = time.Now()
+	 }
+	}
 	// Here we compute two numbers: excess burst capacity and number of activators
 	// for subsetting.
 	// - the excess burst capacity is based on panic value, since we don't want to
